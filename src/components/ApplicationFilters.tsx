@@ -102,14 +102,14 @@ export const ApplicationFilters: React.FC = () => {
         
         <div className="w-full sm:w-1/3">
           <Select 
-            value={statusFilter || ""} 
-            onValueChange={(value) => setStatusFilter(value as any || null)}
+            value={statusFilter || "all"} 
+            onValueChange={(value) => setStatusFilter(value === "all" ? null : value as any)}
           >
             <SelectTrigger>
               <SelectValue placeholder="Statut de candidature" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Tous les statuts</SelectItem>
+              <SelectItem value="all">Tous les statuts</SelectItem>
               {statusOptions.map((option) => (
                 <SelectItem key={option.value} value={option.value}>
                   {option.label}
