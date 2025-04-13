@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -61,6 +62,16 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				// Statuts des candidatures
+				status: {
+					'not-sent': '#E5E7EB', // Gris clair
+					'sent': '#93C5FD', // Bleu clair
+					'response-positive': '#86EFAC', // Vert clair
+					'response-negative': '#FCA5A5', // Rouge clair
+					'interview-scheduled': '#FDE68A', // Jaune clair
+					'interview-done': '#C4B5FD', // Violet clair
+					'waiting': '#CBD5E1', // Gris bleuté
 				}
 			},
 			borderRadius: {
