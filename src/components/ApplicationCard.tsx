@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Application, getStatusLabel, statusOptions } from "@/types/application";
+import { Application, getStatusLabel, statusOptions, ApplicationStatus } from "@/types/application";
 import { 
   Briefcase, Building, Mail, Linkedin, MapPin, Calendar, Edit, Trash2,
   MessageSquare, Clock, ChevronDown, CheckCircle, XCircle
@@ -83,7 +83,7 @@ export const ApplicationCard: React.FC<ApplicationCardProps> = ({
               {statusOptions.map((option) => (
                 <DropdownMenuItem 
                   key={option.value}
-                  onClick={() => onEdit({ ...application, status: option.value })}
+                  onClick={() => onEdit({ ...application, status: option.value as ApplicationStatus })}
                   className="cursor-pointer"
                 >
                   {option.label}
