@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -40,9 +39,9 @@ export const ApplicationForm: React.FC<ApplicationFormProps> = ({
       setFormData({
         jobTitle: application.jobTitle,
         companyName: application.companyName,
-        contactEmail: application.contactEmail,
-        linkedinUrl: application.linkedinUrl,
-        location: application.location,
+        contactEmail: application.contactEmail || "",
+        linkedinUrl: application.linkedinUrl || "",
+        location: application.location || "",
         status: application.status
       });
     } else {
@@ -105,7 +104,6 @@ export const ApplicationForm: React.FC<ApplicationFormProps> = ({
         await addApplication(formData);
       }
       
-      // Ensure the dialog closes after the operation completes
       onClose();
     } catch (error) {
       console.error("Error submitting form:", error);
@@ -114,9 +112,15 @@ export const ApplicationForm: React.FC<ApplicationFormProps> = ({
     }
   };
 
+  const handleCancel = () => {
+    if (!isSubmitting) {
+      onClose();
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={(open) => {
-      if (!open) onClose();
+      if (!open && !isSubmitting) onClose();
     }}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
@@ -224,7 +228,7 @@ export const ApplicationForm: React.FC<ApplicationFormProps> = ({
             <Button 
               type="button" 
               variant="outline" 
-              onClick={onClose}
+              onClick={handleCancel}
               disabled={isSubmitting}
             >
               Annuler
@@ -241,3 +245,5 @@ export const ApplicationForm: React.FC<ApplicationFormProps> = ({
     </Dialog>
   );
 };
+
+export { ApplicationForm };

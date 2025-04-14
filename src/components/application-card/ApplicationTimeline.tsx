@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Application } from "@/types/application";
 import { 
   Collapsible, 
@@ -26,6 +26,13 @@ import { fr } from "date-fns/locale";
 import { Textarea } from "@/components/ui/textarea";
 import { useApplications } from "@/context/ApplicationContext";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+
+interface TimelineComment {
+  id: string;
+  notes: string;
+  created_at: string;
+}
 
 interface ApplicationTimelineProps {
   application: Application;
@@ -42,10 +49,41 @@ export const ApplicationTimeline: React.FC<ApplicationTimelineProps> = ({
   const [comment, setComment] = useState("");
   const [isAddingComment, setIsAddingComment] = useState(false);
   const [isSavingComment, setIsSavingComment] = useState(false);
+  const [comments, setComments] = useState<TimelineComment[]>([]);
+  const [isLoadingComments, setIsLoadingComments] = useState(false);
   const { addCommentToApplication } = useApplications();
 
   const formatDate = (date: Date) => {
     return formatDistanceToNow(new Date(date), { addSuffix: true, locale: fr });
+  };
+
+  // Fetch comments when timeline expands
+  useEffect(() => {
+    if (isOpen) {
+      fetchComments();
+    }
+  }, [isOpen, id]);
+
+  const fetchComments = async () => {
+    if (!id) return;
+    
+    setIsLoadingComments(true);
+    try {
+      const { data, error } = await supabase
+        .from('application_timeline')
+        .select('*')
+        .eq('application_id', id)
+        .eq('status', 'comment')
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      
+      setComments(data || []);
+    } catch (error) {
+      console.error("Error fetching comments:", error);
+    } finally {
+      setIsLoadingComments(false);
+    }
   };
 
   const handleAddComment = async () => {
@@ -54,14 +92,21 @@ export const ApplicationTimeline: React.FC<ApplicationTimelineProps> = ({
     setIsSavingComment(true);
     try {
       await addCommentToApplication(id, comment);
+      // Add the new comment to the local state immediately without refetching
+      const newComment = {
+        id: 'temp-' + Date.now(),
+        notes: comment,
+        created_at: new Date().toISOString()
+      };
+      setComments(prev => [newComment, ...prev]);
       setComment("");
+      setIsAddingComment(false);
       toast.success("Commentaire ajouté avec succès");
     } catch (error) {
       console.error("Error adding comment:", error);
       toast.error("Erreur lors de l'ajout du commentaire");
     } finally {
       setIsSavingComment(false);
-      setIsAddingComment(false);
     }
   };
 
@@ -134,6 +179,28 @@ export const ApplicationTimeline: React.FC<ApplicationTimelineProps> = ({
             </div>
           )}
           
+          {/* Display existing comments */}
+          {comments.length > 0 && (
+            <div className="mt-3 space-y-2">
+              <h4 className="text-xs font-semibold">Commentaires</h4>
+              {comments.map((comment) => (
+                <div key={comment.id} className="bg-gray-50 p-2 rounded-md text-xs">
+                  <p>{comment.notes}</p>
+                  <span className="text-[10px] text-gray-500">
+                    {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true, locale: fr })}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+          
+          {/* Loading indicator for comments */}
+          {isLoadingComments && (
+            <div className="flex justify-center py-2">
+              <Loader2 size={16} className="animate-spin text-muted-foreground" />
+            </div>
+          )}
+          
           {/* Comment section with actual functionality */}
           <div className="pt-2 border-t mt-2">
             {isAddingComment ? (
@@ -144,6 +211,7 @@ export const ApplicationTimeline: React.FC<ApplicationTimelineProps> = ({
                   onChange={(e) => setComment(e.target.value)}
                   className="min-h-[60px] text-sm"
                   disabled={isSavingComment}
+                  autoFocus
                 />
                 <div className="flex justify-end gap-2">
                   <Button 
@@ -176,7 +244,10 @@ export const ApplicationTimeline: React.FC<ApplicationTimelineProps> = ({
               <Button 
                 variant="ghost" 
                 size="sm" 
-                onClick={() => setIsAddingComment(true)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsAddingComment(true);
+                }}
                 className="h-7 p-1 text-xs w-full justify-start"
               >
                 <MessageSquare size={14} className="mr-1" />

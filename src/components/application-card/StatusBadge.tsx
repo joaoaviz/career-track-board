@@ -1,5 +1,5 @@
 
-import React, { useRef } from "react";
+import React, { useRef, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ChevronDown } from "lucide-react";
@@ -24,21 +24,32 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
 }) => {
   // Using ref to close the dropdown after selection
   const triggerRef = useRef<HTMLButtonElement>(null);
+  const isMenuOpen = useRef(false);
 
   const handleStatusSelect = (newStatus: ApplicationStatus) => {
-    onStatusChange(newStatus);
-    // Close the dropdown menu programmatically
-    setTimeout(() => {
-      if (triggerRef.current) {
-        triggerRef.current.click();
-      }
-    }, 100);
+    if (newStatus !== currentStatus) {
+      onStatusChange(newStatus);
+    }
+    
+    // Close the dropdown menu
+    if (triggerRef.current && isMenuOpen.current) {
+      triggerRef.current.click();
+    }
   };
-
+  
   return (
-    <DropdownMenu>
+    <DropdownMenu onOpenChange={(open) => { isMenuOpen.current = open; }}>
       <DropdownMenuTrigger asChild>
-        <Button ref={triggerRef} variant="outline" size="sm" className="h-8 px-2">
+        <Button 
+          ref={triggerRef} 
+          variant="outline" 
+          size="sm" 
+          className="h-8 px-2"
+          onClick={(e) => {
+            // Prevent event propagation to parent elements
+            e.stopPropagation();
+          }}
+        >
           <Badge className={getStatusColor(currentStatus) + " text-xs font-medium"}>
             {getStatusLabel(currentStatus)}
           </Badge>
@@ -49,7 +60,10 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
         {statusOptions.map((option) => (
           <DropdownMenuItem 
             key={option.value}
-            onClick={() => handleStatusSelect(option.value as ApplicationStatus)}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleStatusSelect(option.value as ApplicationStatus);
+            }}
             className="cursor-pointer"
           >
             {option.label}

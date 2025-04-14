@@ -43,8 +43,14 @@ export const ApplicationCard: React.FC<ApplicationCardProps> = ({
   };
 
   // Handle full edit with form
-  const handleEditClick = () => {
+  const handleEditClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
     onEdit(application);
+  };
+
+  const handleDeleteClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onDelete(id);
   };
 
   return (
@@ -90,7 +96,7 @@ export const ApplicationCard: React.FC<ApplicationCardProps> = ({
         <Button 
           variant="outline" 
           size="sm" 
-          onClick={() => onDelete(id)}
+          onClick={handleDeleteClick}
           className="h-8 px-2 text-red-600 hover:text-red-700 hover:bg-red-50"
         >
           <Trash2 size={16} className="mr-1" />
