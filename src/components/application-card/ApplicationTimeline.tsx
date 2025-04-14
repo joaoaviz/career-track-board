@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Application } from "@/types/application";
 import { 
   Collapsible, 
@@ -13,7 +13,8 @@ import {
   ChevronDown, 
   Clock, 
   MessageSquare, 
-  XCircle 
+  XCircle, 
+  Loader2
 } from "lucide-react";
 import {
   HoverCard,
@@ -22,6 +23,9 @@ import {
 } from "@/components/ui/hover-card";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
+import { Textarea } from "@/components/ui/textarea";
+import { useApplications } from "@/context/ApplicationContext";
+import { toast } from "sonner";
 
 interface ApplicationTimelineProps {
   application: Application;
@@ -34,10 +38,31 @@ export const ApplicationTimeline: React.FC<ApplicationTimelineProps> = ({
   isOpen, 
   onOpenChange 
 }) => {
-  const { status, createdAt, updatedAt } = application;
+  const { status, createdAt, updatedAt, id } = application;
+  const [comment, setComment] = useState("");
+  const [isAddingComment, setIsAddingComment] = useState(false);
+  const [isSavingComment, setIsSavingComment] = useState(false);
+  const { addCommentToApplication } = useApplications();
 
   const formatDate = (date: Date) => {
     return formatDistanceToNow(new Date(date), { addSuffix: true, locale: fr });
+  };
+
+  const handleAddComment = async () => {
+    if (!comment.trim()) return;
+    
+    setIsSavingComment(true);
+    try {
+      await addCommentToApplication(id, comment);
+      setComment("");
+      toast.success("Commentaire ajouté avec succès");
+    } catch (error) {
+      console.error("Error adding comment:", error);
+      toast.error("Erreur lors de l'ajout du commentaire");
+    } finally {
+      setIsSavingComment(false);
+      setIsAddingComment(false);
+    }
   };
 
   return (
@@ -109,12 +134,55 @@ export const ApplicationTimeline: React.FC<ApplicationTimelineProps> = ({
             </div>
           )}
           
-          {/* Option pour ajouter des commentaires (placeholder UI) */}
-          <div className="pt-1">
-            <Button variant="ghost" size="sm" className="h-7 p-1 text-xs w-full justify-start">
-              <MessageSquare size={14} className="mr-1" />
-              Ajouter un commentaire...
-            </Button>
+          {/* Comment section with actual functionality */}
+          <div className="pt-2 border-t mt-2">
+            {isAddingComment ? (
+              <div className="space-y-2">
+                <Textarea 
+                  placeholder="Ajoutez un commentaire..." 
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value)}
+                  className="min-h-[60px] text-sm"
+                  disabled={isSavingComment}
+                />
+                <div className="flex justify-end gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => setIsAddingComment(false)}
+                    disabled={isSavingComment}
+                    className="h-7 text-xs"
+                  >
+                    Annuler
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    onClick={handleAddComment}
+                    disabled={!comment.trim() || isSavingComment}
+                    className="h-7 text-xs"
+                  >
+                    {isSavingComment ? (
+                      <>
+                        <Loader2 size={12} className="mr-1 animate-spin" />
+                        Enregistrement...
+                      </>
+                    ) : (
+                      'Enregistrer'
+                    )}
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => setIsAddingComment(true)}
+                className="h-7 p-1 text-xs w-full justify-start"
+              >
+                <MessageSquare size={14} className="mr-1" />
+                Ajouter un commentaire...
+              </Button>
+            )}
           </div>
         </div>
       </CollapsibleContent>

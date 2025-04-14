@@ -19,6 +19,7 @@ interface ApplicationContextType {
   companyFilter: string;
   locationFilter: string;
   clearFilters: () => void;
+  addCommentToApplication: (applicationId: string, comment: string) => Promise<void>;
 }
 
 const ApplicationContext = createContext<ApplicationContextType | undefined>(undefined);
@@ -174,6 +175,32 @@ export const ApplicationProvider: React.FC<{ children: React.ReactNode }> = ({ c
     }
   };
 
+  // Add comment to an application using application_timeline table
+  const addCommentToApplication = async (applicationId: string, comment: string): Promise<void> => {
+    if (!user) return Promise.reject("User not authenticated");
+    
+    try {
+      const { error } = await supabase
+        .from('application_timeline')
+        .insert({
+          application_id: applicationId,
+          user_id: user.id,
+          status: 'comment',
+          notes: comment
+        });
+      
+      if (error) throw error;
+      
+      // We don't need to update the local state here since comments
+      // are stored in a separate table and displayed separately
+      
+      return Promise.resolve();
+    } catch (error) {
+      console.error("Error adding comment:", error);
+      return Promise.reject(error);
+    }
+  };
+
   const clearFilters = () => {
     setStatusFilter(null);
     setCompanyFilter("");
@@ -205,7 +232,8 @@ export const ApplicationProvider: React.FC<{ children: React.ReactNode }> = ({ c
         statusFilter,
         companyFilter,
         locationFilter,
-        clearFilters
+        clearFilters,
+        addCommentToApplication
       }}
     >
       {children}
