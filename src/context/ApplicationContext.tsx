@@ -3,6 +3,8 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 import { Application, ApplicationStatus } from "@/types/application";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "./AuthContext";
 
 interface ApplicationContextType {
   applications: Application[];
@@ -30,59 +32,142 @@ export const useApplications = () => {
 };
 
 export const ApplicationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [applications, setApplications] = useState<Application[]>(() => {
-    const savedApplications = localStorage.getItem("jobApplications");
-    if (savedApplications) {
-      try {
-        const parsed = JSON.parse(savedApplications);
-        // Convert string dates to Date objects
-        return parsed.map((app: any) => ({
-          ...app,
-          createdAt: new Date(app.createdAt),
-          updatedAt: new Date(app.updatedAt)
-        }));
-      } catch (error) {
-        console.error("Erreur lors du chargement des candidatures:", error);
-        return [];
-      }
-    }
-    return [];
-  });
-
+  const [applications, setApplications] = useState<Application[]>([]);
   const [statusFilter, setStatusFilter] = useState<ApplicationStatus | null>(null);
   const [companyFilter, setCompanyFilter] = useState("");
   const [locationFilter, setLocationFilter] = useState("");
+  const { user } = useAuth();
 
-  // Sauvegarde dans localStorage à chaque modification
+  // Fetch applications from Supabase when user changes
   useEffect(() => {
-    localStorage.setItem("jobApplications", JSON.stringify(applications));
-  }, [applications]);
+    if (user) {
+      fetchApplications();
+    } else {
+      setApplications([]);
+    }
+  }, [user]);
 
-  const addApplication = (newApp: Omit<Application, "id" | "createdAt" | "updatedAt">) => {
-    const application: Application = {
-      ...newApp,
-      id: uuidv4(),
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
-    setApplications(prev => [...prev, application]);
-    toast.success("Candidature ajoutée avec succès");
+  const fetchApplications = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('applications')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      
+      if (data) {
+        // Convert string dates to Date objects
+        const formattedData = data.map(app => ({
+          ...app,
+          id: app.id,
+          jobTitle: app.position,
+          companyName: app.company_name,
+          contactEmail: app.contact_email || '',
+          linkedinUrl: app.application_url || '',
+          location: app.location || '',
+          status: app.status as ApplicationStatus,
+          createdAt: new Date(app.created_at),
+          updatedAt: new Date(app.updated_at)
+        })) as Application[];
+        
+        setApplications(formattedData);
+      }
+    } catch (error) {
+      console.error("Error fetching applications:", error);
+      toast.error("Erreur lors du chargement des candidatures");
+    }
   };
 
-  const updateApplication = (id: string, updatedFields: Partial<Application>) => {
-    setApplications(prev => 
-      prev.map(app => 
-        app.id === id 
-          ? { ...app, ...updatedFields, updatedAt: new Date() } 
-          : app
-      )
-    );
-    toast.success("Candidature mise à jour");
+  const addApplication = async (newApp: Omit<Application, "id" | "createdAt" | "updatedAt">) => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('applications')
+        .insert([{
+          user_id: user.id,
+          position: newApp.jobTitle,
+          company_name: newApp.companyName,
+          contact_email: newApp.contactEmail,
+          application_url: newApp.linkedinUrl,
+          location: newApp.location,
+          status: newApp.status
+        }])
+        .select();
+      
+      if (error) throw error;
+      
+      if (data && data[0]) {
+        const newApplication: Application = {
+          ...newApp,
+          id: data[0].id,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        };
+        
+        setApplications(prev => [newApplication, ...prev]);
+        toast.success("Candidature ajoutée avec succès");
+      }
+    } catch (error) {
+      console.error("Error adding application:", error);
+      toast.error("Erreur lors de l'ajout de la candidature");
+    }
   };
 
-  const deleteApplication = (id: string) => {
-    setApplications(prev => prev.filter(app => app.id !== id));
-    toast.success("Candidature supprimée");
+  const updateApplication = async (id: string, updatedFields: Partial<Application>) => {
+    if (!user) return;
+    
+    try {
+      const { error } = await supabase
+        .from('applications')
+        .update({
+          position: updatedFields.jobTitle,
+          company_name: updatedFields.companyName,
+          contact_email: updatedFields.contactEmail,
+          application_url: updatedFields.linkedinUrl,
+          location: updatedFields.location,
+          status: updatedFields.status,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id);
+      
+      if (error) throw error;
+      
+      setApplications(prev => 
+        prev.map(app => 
+          app.id === id 
+            ? { ...app, ...updatedFields, updatedAt: new Date() } 
+            : app
+        )
+      );
+      
+      toast.success("Candidature mise à jour");
+    } catch (error) {
+      console.error("Error updating application:", error);
+      toast.error("Erreur lors de la mise à jour de la candidature");
+    }
+  };
+
+  const deleteApplication = async (id: string) => {
+    if (!user) return;
+    
+    try {
+      const { error } = await supabase
+        .from('applications')
+        .delete()
+        .eq('id', id);
+      
+      if (error) throw error;
+      
+      setApplications(prev => prev.filter(app => app.id !== id));
+      toast.success("Candidature supprimée");
+    } catch (error) {
+      console.error("Error deleting application:", error);
+      toast.error("Erreur lors de la suppression de la candidature");
+    }
   };
 
   const clearFilters = () => {
