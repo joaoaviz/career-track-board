@@ -58,6 +58,11 @@ export const ApplicationCard: React.FC<ApplicationCardProps> = ({
     return formatDistanceToNow(new Date(date), { addSuffix: true, locale: fr });
   };
 
+  // Handle status change directly from dropdown
+  const handleStatusChange = (newStatus: ApplicationStatus) => {
+    onEdit({ ...application, status: newStatus });
+  };
+
   return (
     <Card className={`w-full h-full shadow-md hover:shadow-lg transition-shadow ${getStatusColor(status)} bg-opacity-10 border-2`}>
       <CardHeader className="relative pb-2">
@@ -83,7 +88,7 @@ export const ApplicationCard: React.FC<ApplicationCardProps> = ({
               {statusOptions.map((option) => (
                 <DropdownMenuItem 
                   key={option.value}
-                  onClick={() => onEdit({ ...application, status: option.value as ApplicationStatus })}
+                  onClick={() => handleStatusChange(option.value as ApplicationStatus)}
                   className="cursor-pointer"
                 >
                   {option.label}
