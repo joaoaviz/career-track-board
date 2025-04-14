@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -31,6 +31,7 @@ export const ApplicationForm: React.FC<ApplicationFormProps> = ({
   const { addApplication, updateApplication } = useApplications();
   const [formData, setFormData] = useState(emptyApplication);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   const isEditing = !!application;
 
@@ -88,29 +89,43 @@ export const ApplicationForm: React.FC<ApplicationFormProps> = ({
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!validateForm()) {
+    if (!validateForm() || isSubmitting) {
       return;
     }
     
-    if (isEditing && application) {
-      updateApplication(application.id, formData);
-    } else {
-      addApplication(formData);
-    }
+    setIsSubmitting(true);
     
-    onClose();
+    try {
+      if (isEditing && application) {
+        await updateApplication(application.id, formData);
+      } else {
+        await addApplication(formData);
+      }
+      
+      // Ensure the dialog closes after the operation completes
+      onClose();
+    } catch (error) {
+      console.error("Error submitting form:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={(open) => {
+      if (!open) onClose();
+    }}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>
             {isEditing ? "Modifier la candidature" : "Ajouter une candidature"}
           </DialogTitle>
+          <DialogDescription>
+            {isEditing ? "Modifiez les détails de votre candidature ci-dessous." : "Ajoutez les détails de votre nouvelle candidature."}
+          </DialogDescription>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4 mt-2">
@@ -206,11 +221,19 @@ export const ApplicationForm: React.FC<ApplicationFormProps> = ({
           </div>
           
           <DialogFooter className="mt-6">
-            <Button type="button" variant="outline" onClick={onClose}>
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={onClose}
+              disabled={isSubmitting}
+            >
               Annuler
             </Button>
-            <Button type="submit">
-              {isEditing ? "Mettre à jour" : "Ajouter"}
+            <Button 
+              type="submit"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? "Traitement en cours..." : isEditing ? "Mettre à jour" : "Ajouter"}
             </Button>
           </DialogFooter>
         </form>

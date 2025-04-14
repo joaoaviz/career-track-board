@@ -37,7 +37,14 @@ export const ApplicationCard: React.FC<ApplicationCardProps> = ({
 
   // Handle status change directly from dropdown without opening the edit form
   const handleStatusChange = (newStatus: ApplicationStatus) => {
-    onEdit({ ...application, status: newStatus });
+    if (newStatus !== status) {
+      onEdit({ ...application, status: newStatus });
+    }
+  };
+
+  // Handle full edit with form
+  const handleEditClick = () => {
+    onEdit(application);
   };
 
   return (
@@ -73,7 +80,7 @@ export const ApplicationCard: React.FC<ApplicationCardProps> = ({
         <Button 
           variant="outline" 
           size="sm" 
-          onClick={() => onEdit(application)}
+          onClick={handleEditClick}
           className="h-8 px-2 text-blue-600"
         >
           <Edit size={16} className="mr-1" />

@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useRef } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ChevronDown } from "lucide-react";
@@ -22,21 +22,34 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
   onStatusChange,
   getStatusColor
 }) => {
+  // Using ref to close the dropdown after selection
+  const triggerRef = useRef<HTMLButtonElement>(null);
+
+  const handleStatusSelect = (newStatus: ApplicationStatus) => {
+    onStatusChange(newStatus);
+    // Close the dropdown menu programmatically
+    setTimeout(() => {
+      if (triggerRef.current) {
+        triggerRef.current.click();
+      }
+    }, 100);
+  };
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="sm" className="h-8 px-2">
+        <Button ref={triggerRef} variant="outline" size="sm" className="h-8 px-2">
           <Badge className={getStatusColor(currentStatus) + " text-xs font-medium"}>
             {getStatusLabel(currentStatus)}
           </Badge>
           <ChevronDown size={14} className="ml-1" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
+      <DropdownMenuContent align="end" className="z-50 bg-white">
         {statusOptions.map((option) => (
           <DropdownMenuItem 
             key={option.value}
-            onClick={() => onStatusChange(option.value as ApplicationStatus)}
+            onClick={() => handleStatusSelect(option.value as ApplicationStatus)}
             className="cursor-pointer"
           >
             {option.label}

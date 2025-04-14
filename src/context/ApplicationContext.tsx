@@ -9,7 +9,7 @@ import { useAuth } from "./AuthContext";
 interface ApplicationContextType {
   applications: Application[];
   addApplication: (application: Omit<Application, "id" | "createdAt" | "updatedAt">) => void;
-  updateApplication: (id: string, application: Partial<Application>) => void;
+  updateApplication: (id: string, application: Partial<Application>) => Promise<void>;
   deleteApplication: (id: string) => void;
   filteredApplications: Application[];
   setStatusFilter: (status: ApplicationStatus | null) => void;
@@ -54,6 +54,7 @@ export const ApplicationProvider: React.FC<{ children: React.ReactNode }> = ({ c
       const { data, error } = await supabase
         .from('applications')
         .select('*')
+        .eq('user_id', user.id)
         .order('created_at', { ascending: false });
       
       if (error) throw error;
@@ -117,8 +118,8 @@ export const ApplicationProvider: React.FC<{ children: React.ReactNode }> = ({ c
     }
   };
 
-  const updateApplication = async (id: string, updatedFields: Partial<Application>) => {
-    if (!user) return;
+  const updateApplication = async (id: string, updatedFields: Partial<Application>): Promise<void> => {
+    if (!user) return Promise.reject("User not authenticated");
     
     try {
       const { error } = await supabase
@@ -136,6 +137,7 @@ export const ApplicationProvider: React.FC<{ children: React.ReactNode }> = ({ c
       
       if (error) throw error;
       
+      // Update local state only after successful database update
       setApplications(prev => 
         prev.map(app => 
           app.id === id 
@@ -145,9 +147,11 @@ export const ApplicationProvider: React.FC<{ children: React.ReactNode }> = ({ c
       );
       
       toast.success("Candidature mise à jour");
+      return Promise.resolve();
     } catch (error) {
       console.error("Error updating application:", error);
       toast.error("Erreur lors de la mise à jour de la candidature");
+      return Promise.reject(error);
     }
   };
 
