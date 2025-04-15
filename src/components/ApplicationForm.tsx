@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -6,6 +7,11 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Application, ApplicationStatus, statusOptions } from "@/types/application";
 import { useApplications } from "@/context/ApplicationContext";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { format } from "date-fns";
+import { CalendarIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface ApplicationFormProps {
   application?: Application;
@@ -17,9 +23,11 @@ const emptyApplication = {
   jobTitle: "",
   companyName: "",
   contactEmail: "",
+  contactPhone: "",
   linkedinUrl: "",
   location: "",
-  status: "not-sent" as ApplicationStatus
+  status: "not-sent" as ApplicationStatus,
+  interviewDate: undefined,
 };
 
 export const ApplicationForm: React.FC<ApplicationFormProps> = ({
@@ -40,9 +48,11 @@ export const ApplicationForm: React.FC<ApplicationFormProps> = ({
         jobTitle: application.jobTitle,
         companyName: application.companyName,
         contactEmail: application.contactEmail || "",
+        contactPhone: application.contactPhone || "",
         linkedinUrl: application.linkedinUrl || "",
         location: application.location || "",
-        status: application.status
+        status: application.status,
+        interviewDate: application.interviewDate
       });
     } else {
       setFormData(emptyApplication);
@@ -60,6 +70,10 @@ export const ApplicationForm: React.FC<ApplicationFormProps> = ({
 
   const handleStatusChange = (value: string) => {
     setFormData(prev => ({ ...prev, status: value as ApplicationStatus }));
+  };
+
+  const handleDateChange = (date: Date | undefined) => {
+    setFormData(prev => ({ ...prev, interviewDate: date }));
   };
 
   const validateForm = () => {
@@ -180,6 +194,18 @@ export const ApplicationForm: React.FC<ApplicationFormProps> = ({
           </div>
           
           <div className="space-y-2">
+            <Label htmlFor="contactPhone">Téléphone de contact</Label>
+            <Input
+              id="contactPhone"
+              name="contactPhone"
+              type="tel"
+              value={formData.contactPhone}
+              onChange={handleChange}
+              placeholder="+33 1 23 45 67 89"
+            />
+          </div>
+          
+          <div className="space-y-2">
             <Label htmlFor="linkedinUrl">Lien LinkedIn</Label>
             <Input
               id="linkedinUrl"
@@ -203,6 +229,36 @@ export const ApplicationForm: React.FC<ApplicationFormProps> = ({
               onChange={handleChange}
               placeholder="Paris, Marseille, Remote, etc."
             />
+          </div>
+          
+          <div className="space-y-2">
+            <Label>Date d'entretien</Label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "w-full justify-start text-left font-normal",
+                    !formData.interviewDate && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {formData.interviewDate ? (
+                    format(formData.interviewDate, "PPP")
+                  ) : (
+                    <span>Sélectionner une date</span>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0">
+                <Calendar
+                  mode="single"
+                  selected={formData.interviewDate}
+                  onSelect={handleDateChange}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
           </div>
           
           <div className="space-y-2">

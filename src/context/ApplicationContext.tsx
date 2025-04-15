@@ -68,9 +68,11 @@ export const ApplicationProvider: React.FC<{ children: React.ReactNode }> = ({ c
           jobTitle: app.position,
           companyName: app.company_name,
           contactEmail: app.contact_email || '',
+          contactPhone: app.contact_phone || '',
           linkedinUrl: app.application_url || '',
           location: app.location || '',
           status: app.status as ApplicationStatus,
+          interviewDate: app.interview_date ? new Date(app.interview_date) : undefined,
           createdAt: new Date(app.created_at),
           updatedAt: new Date(app.updated_at)
         })) as Application[];
@@ -94,8 +96,10 @@ export const ApplicationProvider: React.FC<{ children: React.ReactNode }> = ({ c
           position: newApp.jobTitle,
           company_name: newApp.companyName,
           contact_email: newApp.contactEmail,
+          contact_phone: newApp.contactPhone,
           application_url: newApp.linkedinUrl,
           location: newApp.location,
+          interview_date: newApp.interviewDate?.toISOString(),
           status: newApp.status
         }])
         .select();
@@ -129,8 +133,10 @@ export const ApplicationProvider: React.FC<{ children: React.ReactNode }> = ({ c
           position: updatedFields.jobTitle,
           company_name: updatedFields.companyName,
           contact_email: updatedFields.contactEmail,
+          contact_phone: updatedFields.contactPhone,
           application_url: updatedFields.linkedinUrl,
           location: updatedFields.location,
+          interview_date: updatedFields.interviewDate?.toISOString(),
           status: updatedFields.status,
           updated_at: new Date().toISOString()
         })

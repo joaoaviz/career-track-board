@@ -13,9 +13,11 @@ export interface Application {
   jobTitle: string;
   companyName: string;
   contactEmail: string;
+  contactPhone?: string;
   linkedinUrl: string;
   location: string;
   status: ApplicationStatus;
+  interviewDate?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
