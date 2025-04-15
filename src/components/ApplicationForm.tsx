@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -245,5 +246,3 @@ export const ApplicationForm: React.FC<ApplicationFormProps> = ({
     </Dialog>
   );
 };
-
-export { ApplicationForm };
