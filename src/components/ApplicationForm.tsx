@@ -136,7 +136,7 @@ export const ApplicationForm: React.FC<ApplicationFormProps> = ({
     <Dialog open={isOpen} onOpenChange={(open) => {
       if (!open && !isSubmitting) onClose();
     }}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {isEditing ? "Modifier la candidature" : "Ajouter une candidature"}
@@ -250,12 +250,13 @@ export const ApplicationForm: React.FC<ApplicationFormProps> = ({
                   )}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
+              <PopoverContent className="w-auto p-0 z-50">
                 <Calendar
                   mode="single"
                   selected={formData.interviewDate}
                   onSelect={handleDateChange}
                   initialFocus
+                  className={cn("p-3 pointer-events-auto")}
                 />
               </PopoverContent>
             </Popover>
@@ -270,7 +271,7 @@ export const ApplicationForm: React.FC<ApplicationFormProps> = ({
               <SelectTrigger>
                 <SelectValue placeholder="Sélectionner un statut" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="z-50 max-h-60">
                 {statusOptions.map((option) => (
                   <SelectItem key={option.value} value={option.value}>
                     {option.label}
@@ -280,18 +281,20 @@ export const ApplicationForm: React.FC<ApplicationFormProps> = ({
             </Select>
           </div>
           
-          <DialogFooter className="mt-6">
+          <DialogFooter className="mt-6 flex-col sm:flex-row gap-2 sm:gap-0">
             <Button 
               type="button" 
               variant="outline" 
               onClick={handleCancel}
               disabled={isSubmitting}
+              className="w-full sm:w-auto"
             >
               Annuler
             </Button>
             <Button 
               type="submit"
               disabled={isSubmitting}
+              className="w-full sm:w-auto"
             >
               {isSubmitting ? "Traitement en cours..." : isEditing ? "Mettre à jour" : "Ajouter"}
             </Button>
@@ -301,3 +304,4 @@ export const ApplicationForm: React.FC<ApplicationFormProps> = ({
     </Dialog>
   );
 };
+
