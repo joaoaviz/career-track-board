@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { ApplicationFilters } from "@/components/ApplicationFilters";
 import { ApplicationCard } from "@/components/ApplicationCard";
 import { ApplicationForm } from "@/components/ApplicationForm";
 import { useApplications } from "@/context/ApplicationContext";
@@ -11,7 +12,6 @@ import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { Navbar } from "@/components/Navbar";
 import { ApplicationStats } from "@/components/ApplicationStats";
-import { SearchBar } from "@/components/SearchBar";
 
 const ApplicationsBoard: React.FC = () => {
   const { filteredApplications, deleteApplication } = useApplications();
@@ -63,26 +63,24 @@ const ApplicationsBoard: React.FC = () => {
             </p>
           </div>
           
-          <div className="flex flex-col sm:flex-row gap-4 mt-4 sm:mt-0 w-full sm:w-auto">
-            <SearchBar />
-            <Button 
-              onClick={handleAddNewClick}
-              className="shrink-0"
-            >
-              <PlusCircle className="h-4 w-4 mr-2" />
-              Nouvelle candidature
-            </Button>
-          </div>
+          <Button 
+            className="mt-4 sm:mt-0" 
+            onClick={handleAddNewClick}
+          >
+            <PlusCircle className="h-4 w-4 mr-2" />
+            Nouvelle candidature
+          </Button>
         </div>
         
         <ApplicationStats />
+        <ApplicationFilters />
         
         {!hasApplications && (
           <Alert className="mt-8 bg-blue-50 border-blue-100">
             <Info className="h-5 w-5" />
             <AlertDescription>
-              {filteredApplications.length === 0 && applications.length !== 0 
-                ? "Aucune candidature ne correspond à votre recherche." 
+              {filteredApplications.length === 0 && filteredApplications.length !== 0 
+                ? "Aucune candidature ne correspond à vos filtres." 
                 : "Vous n'avez pas encore ajouté de candidature. Cliquez sur 'Nouvelle candidature' pour commencer."}
             </AlertDescription>
           </Alert>
