@@ -13,7 +13,9 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
   getStatusColor
 }) => {
   return (
-    <Badge className={getStatusColor(currentStatus) + " text-xs font-medium"}>
+    <Badge 
+      className={`${getStatusColor(currentStatus)} text-xs font-medium text-black`}
+    >
       {getStatusLabel(currentStatus)}
     </Badge>
   );
