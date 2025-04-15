@@ -11,6 +11,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { Navbar } from "@/components/Navbar";
+import { ApplicationStats } from "@/components/ApplicationStats";
 
 const ApplicationsBoard: React.FC = () => {
   const { filteredApplications, deleteApplication } = useApplications();
@@ -71,6 +72,7 @@ const ApplicationsBoard: React.FC = () => {
           </Button>
         </div>
         
+        <ApplicationStats />
         <ApplicationFilters />
         
         {!hasApplications && (

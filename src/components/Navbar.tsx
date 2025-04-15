@@ -16,29 +16,26 @@ export const Navbar: React.FC = () => {
   
   return (
     <nav className="bg-white shadow-sm border-b">
-      <div className="container mx-auto px-4 py-3 flex justify-between items-center">
-        <Link to="/" className="text-xl font-bold">
-          Suivi de candidatures
-        </Link>
-        
-        <div>
-          {user ? (
-            <div className="flex items-center gap-4">
+      <div className="container mx-auto px-4 py-3">
+        <div className="flex flex-wrap justify-between items-center gap-4">
+          <Link to="/" className="text-xl font-bold shrink-0">
+            Suivi de candidatures
+          </Link>
+          
+          {user && (
+            <div className="flex flex-wrap items-center gap-4 ml-auto">
               <div className="flex items-center gap-2">
                 <User size={18} className="text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">
+                <span className="text-sm text-muted-foreground hidden sm:inline">
                   {user.email}
                 </span>
               </div>
-              <Button variant="outline" size="sm" onClick={handleSignOut}>
+              <Button variant="outline" size="sm" onClick={handleSignOut} className="shrink-0">
                 <LogOut size={16} className="mr-2" />
-                Déconnexion
+                <span className="hidden sm:inline">Déconnexion</span>
+                <span className="sm:hidden">Sortir</span>
               </Button>
             </div>
-          ) : (
-            <Button size="sm" onClick={() => navigate("/auth")}>
-              Connexion
-            </Button>
           )}
         </div>
       </div>
