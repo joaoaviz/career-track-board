@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { Application, ApplicationStatus } from "@/types/application";
 import { v4 as uuidv4 } from "uuid";
@@ -20,6 +19,8 @@ interface ApplicationContextType {
   locationFilter: string;
   clearFilters: () => void;
   addCommentToApplication: (applicationId: string, comment: string) => Promise<void>;
+  setSearchQuery: (searchQuery: string) => void;
+  searchQuery: string;
 }
 
 const ApplicationContext = createContext<ApplicationContextType | undefined>(undefined);
@@ -38,6 +39,7 @@ export const ApplicationProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const [companyFilter, setCompanyFilter] = useState("");
   const [locationFilter, setLocationFilter] = useState("");
   const { user } = useAuth();
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Fetch applications from Supabase when user changes
   useEffect(() => {
@@ -215,13 +217,18 @@ export const ApplicationProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
   // Filtrage des candidatures
   const filteredApplications = applications.filter(app => {
-    const matchesStatus = !statusFilter || app.status === statusFilter;
-    const matchesCompany = !companyFilter || 
-      app.companyName.toLowerCase().includes(companyFilter.toLowerCase());
-    const matchesLocation = !locationFilter || 
-      app.location.toLowerCase().includes(locationFilter.toLowerCase());
+    if (!searchQuery) return true;
     
-    return matchesStatus && matchesCompany && matchesLocation;
+    const searchLower = searchQuery.toLowerCase();
+    return (
+      app.jobTitle.toLowerCase().includes(searchLower) ||
+      app.companyName.toLowerCase().includes(searchLower) ||
+      app.location.toLowerCase().includes(searchLower) ||
+      app.contactEmail.toLowerCase().includes(searchLower) ||
+      (app.contactPhone || "").toLowerCase().includes(searchLower) ||
+      (app.linkedinUrl || "").toLowerCase().includes(searchLower) ||
+      app.status.toLowerCase().includes(searchLower)
+    );
   });
 
   return (
@@ -239,7 +246,9 @@ export const ApplicationProvider: React.FC<{ children: React.ReactNode }> = ({ c
         companyFilter,
         locationFilter,
         clearFilters,
-        addCommentToApplication
+        addCommentToApplication,
+        setSearchQuery,
+        searchQuery
       }}
     >
       {children}
