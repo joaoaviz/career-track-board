@@ -35,13 +35,6 @@ export const ApplicationCard: React.FC<ApplicationCardProps> = ({
     return statusColors[status] || "bg-gray-200 border-gray-300";
   };
 
-  // Handle status change directly from dropdown without opening the edit form
-  const handleStatusChange = (newStatus: ApplicationStatus) => {
-    if (newStatus !== status) {
-      onEdit({ ...application, status: newStatus });
-    }
-  };
-
   // Handle full edit with form
   const handleEditClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -66,7 +59,6 @@ export const ApplicationCard: React.FC<ApplicationCardProps> = ({
           
           <StatusBadge 
             currentStatus={status} 
-            onStatusChange={handleStatusChange} 
             getStatusColor={getStatusColor}
           />
         </div>
