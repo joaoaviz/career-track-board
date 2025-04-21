@@ -1,7 +1,7 @@
 
 import React from "react";
 import { Application } from "@/types/application";
-import { Linkedin, Mail, MapPin, Phone, Calendar } from "lucide-react";
+import { Link, Mail, MapPin, Phone, Calendar } from "lucide-react";
 import { format } from "date-fns";
 
 interface ApplicationDetailsProps {
@@ -11,7 +11,7 @@ interface ApplicationDetailsProps {
 export const ApplicationDetails: React.FC<ApplicationDetailsProps> = ({ application }) => {
   const { 
     contactEmail, 
-    linkedinUrl, 
+    linkedinUrl, // keep the original name since it's from data model, but treat as generic link
     location, 
     contactPhone, 
     interviewDate 
@@ -59,17 +59,18 @@ export const ApplicationDetails: React.FC<ApplicationDetailsProps> = ({ applicat
       
       {linkedinUrl && (
         <div className="flex items-center gap-2">
-          <Linkedin size={16} className="text-muted-foreground flex-shrink-0" />
+          <Link size={16} className="text-muted-foreground flex-shrink-0" />
           <a 
             href={linkedinUrl} 
             target="_blank" 
             rel="noopener noreferrer" 
             className="text-sm text-blue-600 hover:underline line-clamp-1"
           >
-            Voir sur LinkedIn
+            {linkedinUrl}
           </a>
         </div>
       )}
     </div>
   );
 };
+
