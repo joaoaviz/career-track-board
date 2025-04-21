@@ -22,6 +22,9 @@ import {
   AlertDialogAction,
   AlertDialogCancel,
 } from "@/components/ui/alert-dialog";
+import { ApplicationFormFields } from "./ApplicationFormFields";
+import { ApplicationFormDialog } from "./ApplicationFormDialog";
+import { validateApplicationForm } from "./ApplicationFormValidation";
 
 interface ApplicationFormProps {
   application?: Application;
@@ -57,7 +60,6 @@ export const ApplicationForm: React.FC<ApplicationFormProps> = ({
 
   const isEditing = !!application;
 
-  // Update dialog open state when isOpen prop changes
   useEffect(() => {
     setDialogOpen(isOpen);
   }, [isOpen]);
@@ -99,28 +101,7 @@ export const ApplicationForm: React.FC<ApplicationFormProps> = ({
   };
 
   const validateForm = () => {
-    const newErrors: Record<string, string> = {};
-    
-    if (!formData.jobTitle.trim()) {
-      newErrors.jobTitle = "Le nom du poste est requis";
-    }
-    
-    if (!formData.companyName.trim()) {
-      newErrors.companyName = "Le nom de l'entreprise est requis";
-    }
-    
-    if (formData.contactEmail && !/^\S+@\S+\.\S+$/.test(formData.contactEmail)) {
-      newErrors.contactEmail = "Email invalide";
-    }
-    
-    if (
-      formData.linkedinUrl && 
-      !formData.linkedinUrl.startsWith('http://') && 
-      !formData.linkedinUrl.startsWith('https://')
-    ) {
-      newErrors.linkedinUrl = "URL invalide. Doit commencer par http:// ou https://";
-    }
-    
+    const newErrors = validateApplicationForm(formData);
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -190,14 +171,12 @@ export const ApplicationForm: React.FC<ApplicationFormProps> = ({
     }
   };
 
-  // Fix the confirmClose function to properly close the dialog
   const confirmClose = () => {
     setShowConfirmDialog(false);
     setDialogOpen(false);
     onClose();
   };
 
-  // Fix the cancelClose function to properly dismiss the alert
   const cancelClose = () => {
     setShowConfirmDialog(false);
     setPendingCloseReason(null);
@@ -205,185 +184,50 @@ export const ApplicationForm: React.FC<ApplicationFormProps> = ({
 
   return (
     <>
-      <Dialog open={dialogOpen} onOpenChange={handleDialogOpenChange}>
-        <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>
-              {isEditing ? "Modifier la candidature" : "Ajouter une candidature"}
-            </DialogTitle>
-            <DialogDescription>
-              {isEditing ? "Modifiez les détails de votre candidature ci-dessous." : "Ajoutez les détails de votre nouvelle candidature."}
-            </DialogDescription>
-          </DialogHeader>
-          
-          <form onSubmit={handleSubmit} className="space-y-4 mt-2">
-            <div className="space-y-2">
-              <Label htmlFor="jobTitle">Nom du poste *</Label>
-              <Input
-                id="jobTitle"
-                name="jobTitle"
-                value={formData.jobTitle}
-                onChange={handleChange}
-                placeholder="Développeur Frontend, Chef de Projet, etc."
-                className={errors.jobTitle ? "border-red-500" : ""}
-              />
-              {errors.jobTitle && (
-                <p className="text-red-500 text-xs">{errors.jobTitle}</p>
-              )}
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="companyName">Nom de l'entreprise *</Label>
-              <Input
-                id="companyName"
-                name="companyName"
-                value={formData.companyName}
-                onChange={handleChange}
-                placeholder="Nom de l'entreprise"
-                className={errors.companyName ? "border-red-500" : ""}
-              />
-              {errors.companyName && (
-                <p className="text-red-500 text-xs">{errors.companyName}</p>
-              )}
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="contactEmail">Email de contact</Label>
-              <Input
-                id="contactEmail"
-                name="contactEmail"
-                type="email"
-                value={formData.contactEmail}
-                onChange={handleChange}
-                placeholder="contact@entreprise.com"
-                className={errors.contactEmail ? "border-red-500" : ""}
-              />
-              {errors.contactEmail && (
-                <p className="text-red-500 text-xs">{errors.contactEmail}</p>
-              )}
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="contactPhone">Téléphone de contact</Label>
-              <Input
-                id="contactPhone"
-                name="contactPhone"
-                type="tel"
-                value={formData.contactPhone}
-                onChange={handleChange}
-                placeholder="+33 1 23 45 67 89"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="linkedinUrl">Lien</Label>
-              <Input
-                id="linkedinUrl"
-                name="linkedinUrl"
-                value={formData.linkedinUrl}
-                onChange={handleChange}
-                placeholder="https://www.example.com/..."
-                className={errors.linkedinUrl ? "border-red-500" : ""}
-              />
-              {errors.linkedinUrl && (
-                <p className="text-red-500 text-xs">{errors.linkedinUrl}</p>
-              )}
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="location">Localisation</Label>
-              <Input
-                id="location"
-                name="location"
-                value={formData.location}
-                onChange={handleChange}
-                placeholder="Paris, Marseille, Remote, etc."
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label>Date d'entretien</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !formData.interviewDate && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {formData.interviewDate ? (
-                      format(formData.interviewDate, "PPP")
-                    ) : (
-                      <span>Sélectionner une date</span>
-                    )}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0 z-50">
-                  <Calendar
-                    mode="single"
-                    selected={formData.interviewDate}
-                    onSelect={handleDateChange}
-                    initialFocus
-                    className={cn("p-3 pointer-events-auto")}
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="status">Statut</Label>
-              <Select 
-                value={formData.status} 
-                onValueChange={handleStatusChange}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Sélectionner un statut" />
-                </SelectTrigger>
-                <SelectContent className="z-50 max-h-60">
-                  {statusOptions.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="comment">Commentaire</Label>
-              <Textarea
-                id="comment"
-                name="comment"
-                value={formData.comment}
-                onChange={handleChange}
-                placeholder="Ajoutez un commentaire à propos de cette candidature..."
-                className="min-h-[100px]"
-              />
-            </div>
-            
-            <DialogFooter className="mt-6 flex-col sm:flex-row gap-2 sm:gap-0">
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={handleCancel}
-                disabled={isSubmitting}
-                className="w-full sm:w-auto"
-              >
-                Annuler
-              </Button>
-              <Button 
-                type="submit"
-                disabled={isSubmitting}
-                className="w-full sm:w-auto"
-              >
-                {isSubmitting ? "Traitement en cours..." : isEditing ? "Mettre à jour" : "Ajouter"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+      <ApplicationFormDialog
+        open={dialogOpen}
+        onOpenChange={handleDialogOpenChange}
+        title={isEditing ? "Modifier la candidature" : "Ajouter une candidature"}
+        description={
+          isEditing
+            ? "Modifiez les détails de votre candidature ci-dessous."
+            : "Ajoutez les détails de votre nouvelle candidature."
+        }
+        footer={
+          <DialogFooter className="mt-6 flex-col sm:flex-row gap-2 sm:gap-0">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleCancel}
+              disabled={isSubmitting}
+              className="w-full sm:w-auto"
+            >
+              Annuler
+            </Button>
+            <Button
+              type="submit"
+              disabled={isSubmitting}
+              className="w-full sm:w-auto"
+              onClick={handleSubmit}
+            >
+              {isSubmitting
+                ? "Traitement en cours..."
+                : isEditing
+                ? "Mettre à jour"
+                : "Ajouter"}
+            </Button>
+          </DialogFooter>
+        }
+      >
+        <ApplicationFormFields
+          formData={formData}
+          errors={errors}
+          onChange={handleChange}
+          onStatusChange={handleStatusChange}
+          onDateChange={handleDateChange}
+          isEditing={isEditing}
+        />
+      </ApplicationFormDialog>
 
       <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
         <AlertDialogContent>
