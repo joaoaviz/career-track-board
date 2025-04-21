@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -53,7 +52,7 @@ export const ApplicationForm: React.FC<ApplicationFormProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [pendingCloseReason, setPendingCloseReason] = useState<null | "close" | "outside">(null);
-  const initialDataRef = useRef({...emptyApplication});
+  const [initialDataRef] = useState({...emptyApplication});
   const [dialogOpen, setDialogOpen] = useState(isOpen);
 
   const isEditing = !!application;
@@ -77,10 +76,8 @@ export const ApplicationForm: React.FC<ApplicationFormProps> = ({
         comment: "",
       };
       setFormData(updatedFormData);
-      initialDataRef.current = { ...updatedFormData };
     } else {
       setFormData({...emptyApplication});
-      initialDataRef.current = {...emptyApplication};
     }
     setErrors({});
   }, [application, isOpen]);
@@ -157,7 +154,7 @@ export const ApplicationForm: React.FC<ApplicationFormProps> = ({
   };
 
   const isDirty = React.useMemo(() => {
-    const initial = initialDataRef.current;
+    const initial = initialDataRef;
     return (
       initial.jobTitle !== formData.jobTitle ||
       initial.companyName !== formData.companyName ||
@@ -169,7 +166,7 @@ export const ApplicationForm: React.FC<ApplicationFormProps> = ({
       (initial.interviewDate?.toString() || "") !== (formData.interviewDate?.toString() || "") ||
       formData.comment.trim() !== ""
     );
-  }, [formData]);
+  }, [formData, initialDataRef]);
 
   const handleInternalClose = (reason: "close" | "outside") => {
     if (isDirty && !isSubmitting) {
@@ -193,12 +190,14 @@ export const ApplicationForm: React.FC<ApplicationFormProps> = ({
     }
   };
 
+  // Fix the confirmClose function to properly close the dialog
   const confirmClose = () => {
     setShowConfirmDialog(false);
     setDialogOpen(false);
     onClose();
   };
 
+  // Fix the cancelClose function to properly dismiss the alert
   const cancelClose = () => {
     setShowConfirmDialog(false);
     setPendingCloseReason(null);
@@ -386,7 +385,7 @@ export const ApplicationForm: React.FC<ApplicationFormProps> = ({
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={showConfirmDialog}>
+      <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Abandonner les modifications&nbsp;?</AlertDialogTitle>
