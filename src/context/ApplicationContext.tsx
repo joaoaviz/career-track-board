@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { Application, ApplicationStatus } from "@/types/application";
 import { v4 as uuidv4 } from "uuid";
@@ -8,7 +7,7 @@ import { useAuth } from "./AuthContext";
 
 interface ApplicationContextType {
   applications: Application[];
-  addApplication: (application: Omit<Application, "id" | "createdAt" | "updatedAt">) => void;
+  addApplication: (application: Omit<Application, "id" | "createdAt" | "updatedAt">) => Promise<Application | undefined>;
   updateApplication: (id: string, application: Partial<Application>) => Promise<void>;
   deleteApplication: (id: string) => void;
   filteredApplications: Application[];
@@ -85,8 +84,8 @@ export const ApplicationProvider: React.FC<{ children: React.ReactNode }> = ({ c
     }
   };
 
-  const addApplication = async (newApp: Omit<Application, "id" | "createdAt" | "updatedAt">) => {
-    if (!user) return;
+  const addApplication = async (newApp: Omit<Application, "id" | "createdAt" | "updatedAt">): Promise<Application | undefined> => {
+    if (!user) return undefined;
     
     try {
       const { data, error } = await supabase
@@ -116,10 +115,13 @@ export const ApplicationProvider: React.FC<{ children: React.ReactNode }> = ({ c
         
         setApplications(prev => [newApplication, ...prev]);
         toast.success("Candidature ajoutée avec succès");
+        return newApplication;
       }
+      return undefined;
     } catch (error) {
       console.error("Error adding application:", error);
       toast.error("Erreur lors de l'ajout de la candidature");
+      return undefined;
     }
   };
 
@@ -181,7 +183,6 @@ export const ApplicationProvider: React.FC<{ children: React.ReactNode }> = ({ c
     }
   };
 
-  // Add comment to an application using application_timeline table
   const addCommentToApplication = async (applicationId: string, comment: string): Promise<void> => {
     if (!user) return Promise.reject("User not authenticated");
     
@@ -213,7 +214,6 @@ export const ApplicationProvider: React.FC<{ children: React.ReactNode }> = ({ c
     setLocationFilter("");
   };
 
-  // Filtrage des candidatures
   const filteredApplications = applications.filter(app => {
     const matchesStatus = !statusFilter || app.status === statusFilter;
     const matchesCompany = !companyFilter || 

@@ -20,6 +20,7 @@ export interface Application {
   interviewDate?: Date;
   createdAt: Date;
   updatedAt: Date;
+  comment?: string;
 }
 
 export const statusOptions = [

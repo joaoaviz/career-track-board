@@ -17,6 +17,11 @@ export const ApplicationDetails: React.FC<ApplicationDetailsProps> = ({ applicat
     interviewDate 
   } = application;
   
+  // Function to format URL for display (removing http/https and trailing slash)
+  const formatUrl = (url: string) => {
+    return url.replace(/^https?:\/\//, '').replace(/\/$/, '');
+  };
+  
   return (
     <div className="grid gap-1">
       <div className="flex items-center gap-2">
@@ -66,11 +71,10 @@ export const ApplicationDetails: React.FC<ApplicationDetailsProps> = ({ applicat
             rel="noopener noreferrer" 
             className="text-sm text-blue-600 hover:underline line-clamp-1"
           >
-            {linkedinUrl}
+            {formatUrl(linkedinUrl)}
           </a>
         </div>
       )}
     </div>
   );
 };
-

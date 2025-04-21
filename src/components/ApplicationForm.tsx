@@ -1,8 +1,10 @@
+
 import React, { useState, useEffect, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Application, ApplicationStatus, statusOptions } from "@/types/application";
 import { useApplications } from "@/context/ApplicationContext";
@@ -37,6 +39,7 @@ const emptyApplication = {
   location: "",
   status: "not-sent" as ApplicationStatus,
   interviewDate: undefined,
+  comment: "",
 };
 
 export const ApplicationForm: React.FC<ApplicationFormProps> = ({
@@ -44,19 +47,25 @@ export const ApplicationForm: React.FC<ApplicationFormProps> = ({
   isOpen,
   onClose
 }) => {
-  const { addApplication, updateApplication } = useApplications();
-  const [formData, setFormData] = useState(emptyApplication);
+  const { addApplication, updateApplication, addCommentToApplication } = useApplications();
+  const [formData, setFormData] = useState({...emptyApplication});
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [pendingCloseReason, setPendingCloseReason] = useState<null | "close" | "outside">(null);
-  const initialDataRef = useRef(emptyApplication);
+  const initialDataRef = useRef({...emptyApplication});
+  const [dialogOpen, setDialogOpen] = useState(isOpen);
 
   const isEditing = !!application;
 
+  // Update dialog open state when isOpen prop changes
+  useEffect(() => {
+    setDialogOpen(isOpen);
+  }, [isOpen]);
+
   useEffect(() => {
     if (application) {
-      setFormData({
+      const updatedFormData = {
         jobTitle: application.jobTitle,
         companyName: application.companyName,
         contactEmail: application.contactEmail || "",
@@ -64,26 +73,19 @@ export const ApplicationForm: React.FC<ApplicationFormProps> = ({
         linkedinUrl: application.linkedinUrl || "",
         location: application.location || "",
         status: application.status,
-        interviewDate: application.interviewDate
-      });
-      initialDataRef.current = {
-        jobTitle: application.jobTitle,
-        companyName: application.companyName,
-        contactEmail: application.contactEmail || "",
-        contactPhone: application.contactPhone || "",
-        linkedinUrl: application.linkedinUrl || "",
-        location: application.location || "",
-        status: application.status,
-        interviewDate: application.interviewDate
-      }
+        interviewDate: application.interviewDate,
+        comment: "",
+      };
+      setFormData(updatedFormData);
+      initialDataRef.current = { ...updatedFormData };
     } else {
-      setFormData(emptyApplication);
-      initialDataRef.current = emptyApplication;
+      setFormData({...emptyApplication});
+      initialDataRef.current = {...emptyApplication};
     }
     setErrors({});
   }, [application, isOpen]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
     if (errors[name]) {
@@ -116,9 +118,10 @@ export const ApplicationForm: React.FC<ApplicationFormProps> = ({
     
     if (
       formData.linkedinUrl && 
-      !/^https?:\/\/(www\.)?linkedin\.com\/.*$/.test(formData.linkedinUrl)
+      !formData.linkedinUrl.startsWith('http://') && 
+      !formData.linkedinUrl.startsWith('https://')
     ) {
-      newErrors.linkedinUrl = "URL LinkedIn invalide";
+      newErrors.linkedinUrl = "URL invalide. Doit commencer par http:// ou https://";
     }
     
     setErrors(newErrors);
@@ -134,9 +137,17 @@ export const ApplicationForm: React.FC<ApplicationFormProps> = ({
     try {
       if (isEditing && application) {
         await updateApplication(application.id, formData);
+        if (formData.comment) {
+          await addCommentToApplication(application.id, formData.comment);
+        }
       } else {
-        await addApplication(formData);
+        const newApp = await addApplication(formData);
+        if (formData.comment && newApp?.id) {
+          await addCommentToApplication(newApp.id, formData.comment);
+        }
       }
+      setShowConfirmDialog(false);
+      setDialogOpen(false);
       onClose();
     } catch (error) {
       console.error("Error submitting form:", error);
@@ -155,7 +166,8 @@ export const ApplicationForm: React.FC<ApplicationFormProps> = ({
       initial.linkedinUrl !== formData.linkedinUrl ||
       initial.location !== formData.location ||
       initial.status !== formData.status ||
-      (initial.interviewDate?.toString() || "") !== (formData.interviewDate?.toString() || "")
+      (initial.interviewDate?.toString() || "") !== (formData.interviewDate?.toString() || "") ||
+      formData.comment.trim() !== ""
     );
   }, [formData]);
 
@@ -164,6 +176,7 @@ export const ApplicationForm: React.FC<ApplicationFormProps> = ({
       setPendingCloseReason(reason);
       setShowConfirmDialog(true);
     } else {
+      setDialogOpen(false);
       onClose();
     }
   };
@@ -175,11 +188,14 @@ export const ApplicationForm: React.FC<ApplicationFormProps> = ({
   const handleDialogOpenChange = (open: boolean) => {
     if (!open) {
       handleInternalClose("outside");
+    } else {
+      setDialogOpen(true);
     }
   };
 
   const confirmClose = () => {
     setShowConfirmDialog(false);
+    setDialogOpen(false);
     onClose();
   };
 
@@ -190,7 +206,7 @@ export const ApplicationForm: React.FC<ApplicationFormProps> = ({
 
   return (
     <>
-      <Dialog open={isOpen} onOpenChange={handleDialogOpenChange}>
+      <Dialog open={dialogOpen} onOpenChange={handleDialogOpenChange}>
         <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
@@ -261,13 +277,13 @@ export const ApplicationForm: React.FC<ApplicationFormProps> = ({
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="linkedinUrl">Lien LinkedIn</Label>
+              <Label htmlFor="linkedinUrl">Lien</Label>
               <Input
                 id="linkedinUrl"
                 name="linkedinUrl"
                 value={formData.linkedinUrl}
                 onChange={handleChange}
-                placeholder="https://www.linkedin.com/company/..."
+                placeholder="https://www.example.com/..."
                 className={errors.linkedinUrl ? "border-red-500" : ""}
               />
               {errors.linkedinUrl && (
@@ -334,6 +350,18 @@ export const ApplicationForm: React.FC<ApplicationFormProps> = ({
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="comment">Commentaire</Label>
+              <Textarea
+                id="comment"
+                name="comment"
+                value={formData.comment}
+                onChange={handleChange}
+                placeholder="Ajoutez un commentaire à propos de cette candidature..."
+                className="min-h-[100px]"
+              />
             </div>
             
             <DialogFooter className="mt-6 flex-col sm:flex-row gap-2 sm:gap-0">
