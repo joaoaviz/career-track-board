@@ -180,6 +180,7 @@ export const ApplicationForm: React.FC<ApplicationFormProps> = ({
   const cancelClose = () => {
     setShowConfirmDialog(false);
     setPendingCloseReason(null);
+    setDialogOpen(true);
   };
 
   return (
