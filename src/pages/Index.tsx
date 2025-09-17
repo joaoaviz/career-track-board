@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ApplicationFilters } from "@/components/ApplicationFilters";
 import { ApplicationCard } from "@/components/ApplicationCard";
 import { ApplicationForm } from "@/components/ApplicationForm";
+import { UserFilter } from "@/components/UserFilter";
 import { useApplications } from "@/context/ApplicationContext";
 import { PlusCircle, Info } from "lucide-react";
 import { Application } from "@/types/application";
@@ -14,7 +15,7 @@ import { Navbar } from "@/components/Navbar";
 import { ApplicationStats } from "@/components/ApplicationStats";
 
 const ApplicationsBoard: React.FC = () => {
-  const { filteredApplications, deleteApplication } = useApplications();
+  const { filteredApplications, deleteApplication, setUserFilter, userFilter } = useApplications();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedApplication, setSelectedApplication] = useState<Application | undefined>(undefined);
   const { user } = useAuth();
@@ -73,7 +74,17 @@ const ApplicationsBoard: React.FC = () => {
         </div>
         
         <ApplicationStats />
-        <ApplicationFilters />
+        <div className="flex flex-col lg:flex-row gap-4 mb-6">
+          <div className="flex-1">
+            <ApplicationFilters />
+          </div>
+          <div className="lg:w-64">
+            <UserFilter 
+              selectedUserId={userFilter}
+              onUserChange={setUserFilter}
+            />
+          </div>
+        </div>
         
         {!hasApplications && (
           <Alert className="mt-8 bg-blue-50 border-blue-100">

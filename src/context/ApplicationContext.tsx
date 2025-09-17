@@ -4,6 +4,7 @@ import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./AuthContext";
+import { useUserRole } from "@/hooks/useUserRole";
 
 
 interface ApplicationContextType {
@@ -15,9 +16,11 @@ interface ApplicationContextType {
   setStatusFilter: (status: ApplicationStatus | null) => void;
   setCompanyFilter: (company: string) => void;
   setLocationFilter: (location: string) => void;
+  setUserFilter: (userId: string | null) => void;
   statusFilter: ApplicationStatus | null;
   companyFilter: string;
   locationFilter: string;
+  userFilter: string | null;
   clearFilters: () => void;
   addCommentToApplication: (applicationId: string, comment: string) => Promise<void>;
 }
@@ -37,17 +40,19 @@ export const ApplicationProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const [statusFilter, setStatusFilter] = useState<ApplicationStatus | null>(null);
   const [companyFilter, setCompanyFilter] = useState("");
   const [locationFilter, setLocationFilter] = useState("");
+  const [userFilter, setUserFilter] = useState<string | null>(null);
   const { user } = useAuth();
+  const { userRole } = useUserRole();
   
 
-  // Fetch applications from Supabase when user changes
+  // Fetch applications from Supabase when user or role changes
   useEffect(() => {
-    if (user) {
+    if (user && userRole !== null) {
       fetchApplications();
     } else {
       setApplications([]);
     }
-  }, [user]);
+  }, [user, userRole]);
 
   const fetchApplications = async () => {
     if (!user) return;
@@ -63,8 +68,21 @@ export const ApplicationProvider: React.FC<{ children: React.ReactNode }> = ({ c
       if (error) throw error;
       
       if (data) {
+        // Store user_id for filtering purposes and get user info for managers
+        let userFullNames: Record<string, string> = {};
+        if (userRole === 'manager') {
+          const userIds = [...new Set(data.map(app => app.user_id))];
+          const { data: profiles } = await supabase
+            .from('profiles')
+            .select('id, full_name')
+            .in('id', userIds);
+          
+          userFullNames = Object.fromEntries(
+            profiles?.map(p => [p.id, p.full_name || 'Utilisateur inconnu']) || []
+          );
+        }
         
-        // Convert string dates to Date objects
+        // Convert string dates to Date objects and preserve user_id
         const formattedData = data.map(app => ({
           ...app,
           id: app.id,
@@ -77,7 +95,9 @@ export const ApplicationProvider: React.FC<{ children: React.ReactNode }> = ({ c
           status: app.status as ApplicationStatus,
           interviewDate: app.interview_date ? new Date(app.interview_date) : undefined,
           createdAt: new Date(app.created_at),
-          updatedAt: new Date(app.updated_at)
+          updatedAt: new Date(app.updated_at),
+          userFullName: userRole === 'manager' ? userFullNames[app.user_id] : undefined,
+          user_id: app.user_id // Keep for filtering
         })) as Application[];
         
         setApplications(formattedData);
@@ -216,6 +236,7 @@ export const ApplicationProvider: React.FC<{ children: React.ReactNode }> = ({ c
     setStatusFilter(null);
     setCompanyFilter("");
     setLocationFilter("");
+    setUserFilter(null);
   };
 
   const filteredApplications = applications.filter(app => {
@@ -224,8 +245,10 @@ export const ApplicationProvider: React.FC<{ children: React.ReactNode }> = ({ c
       app.companyName.toLowerCase().includes(companyFilter.toLowerCase());
     const matchesLocation = !locationFilter || 
       app.location.toLowerCase().includes(locationFilter.toLowerCase());
+    const matchesUser = !userFilter || 
+      (userRole === 'manager' && (app as any).user_id === userFilter);
     
-    return matchesStatus && matchesCompany && matchesLocation;
+    return matchesStatus && matchesCompany && matchesLocation && matchesUser;
   });
 
   return (
@@ -239,9 +262,11 @@ export const ApplicationProvider: React.FC<{ children: React.ReactNode }> = ({ c
         setStatusFilter,
         setCompanyFilter,
         setLocationFilter,
+        setUserFilter,
         statusFilter,
         companyFilter,
         locationFilter,
+        userFilter,
         clearFilters,
         addCommentToApplication
       }}

@@ -159,6 +159,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_all_users_for_manager: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          email: string
+          full_name: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+        }[]
+      }
       get_current_user_role: {
         Args: Record<PropertyKey, never>
         Returns: Database["public"]["Enums"]["app_role"]
