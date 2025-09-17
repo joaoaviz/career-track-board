@@ -3,10 +3,11 @@ import React, { useState } from "react";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Application, ApplicationStatus } from "@/types/application";
-import { Edit, Trash2 } from "lucide-react";
+import { Edit, Trash2, User } from "lucide-react";
 import { StatusBadge } from "./application-card/StatusBadge";
 import { ApplicationDetails } from "./application-card/ApplicationDetails";
 import { ApplicationTimeline } from "./application-card/ApplicationTimeline";
+import { useUserRole } from "@/hooks/useUserRole";
 
 interface ApplicationCardProps {
   application: Application;
@@ -19,8 +20,9 @@ export const ApplicationCard: React.FC<ApplicationCardProps> = ({
   onEdit,
   onDelete
 }) => {
-  const { id, jobTitle, companyName, status } = application;
+  const { id, jobTitle, companyName, status, userFullName } = application;
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const { userRole } = useUserRole();
 
   const getStatusColor = (status: string): string => {
     const statusColors: Record<string, string> = {
@@ -55,6 +57,14 @@ export const ApplicationCard: React.FC<ApplicationCardProps> = ({
             <div className="flex items-center gap-1 text-muted-foreground">
               <span className="line-clamp-1">{companyName}</span>
             </div>
+            {userRole === 'manager' && userFullName && (
+              <div className="flex items-center gap-1 mt-1">
+                <User size={12} className="text-muted-foreground" />
+                <span className="text-xs text-muted-foreground">
+                  {userFullName}
+                </span>
+              </div>
+            )}
           </div>
           
           <StatusBadge 

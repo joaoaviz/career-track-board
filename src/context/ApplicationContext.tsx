@@ -4,6 +4,7 @@ import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./AuthContext";
+import { useUserRole } from "@/hooks/useUserRole";
 
 interface ApplicationContextType {
   applications: Application[];
@@ -37,29 +38,49 @@ export const ApplicationProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const [companyFilter, setCompanyFilter] = useState("");
   const [locationFilter, setLocationFilter] = useState("");
   const { user } = useAuth();
+  const { userRole } = useUserRole();
 
-  // Fetch applications from Supabase when user changes
+  // Fetch applications from Supabase when user or role changes
   useEffect(() => {
-    if (user) {
+    if (user && userRole !== null) {
       fetchApplications();
     } else {
       setApplications([]);
     }
-  }, [user]);
+  }, [user, userRole]);
 
   const fetchApplications = async () => {
     if (!user) return;
     
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('applications')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
+        .select('*');
+      
+      // If user is not a manager, only show their own applications
+      if (userRole !== 'manager') {
+        query = query.eq('user_id', user.id);
+      }
+      
+      const { data, error } = await query.order('created_at', { ascending: false });
       
       if (error) throw error;
       
       if (data) {
+        // For managers, get user info for each application
+        let userFullNames: Record<string, string> = {};
+        if (userRole === 'manager') {
+          const userIds = [...new Set(data.map(app => app.user_id))];
+          const { data: profiles } = await supabase
+            .from('profiles')
+            .select('id, full_name')
+            .in('id', userIds);
+          
+          userFullNames = Object.fromEntries(
+            profiles?.map(p => [p.id, p.full_name || 'Utilisateur inconnu']) || []
+          );
+        }
+        
         // Convert string dates to Date objects
         const formattedData = data.map(app => ({
           ...app,
@@ -73,7 +94,8 @@ export const ApplicationProvider: React.FC<{ children: React.ReactNode }> = ({ c
           status: app.status as ApplicationStatus,
           interviewDate: app.interview_date ? new Date(app.interview_date) : undefined,
           createdAt: new Date(app.created_at),
-          updatedAt: new Date(app.updated_at)
+          updatedAt: new Date(app.updated_at),
+          userFullName: userRole === 'manager' ? userFullNames[app.user_id] : undefined
         })) as Application[];
         
         setApplications(formattedData);

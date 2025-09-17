@@ -21,6 +21,7 @@ export interface Application {
   createdAt: Date;
   updatedAt: Date;
   comment?: string;
+  userFullName?: string; // For managers to see which user created the application
 }
 
 export const statusOptions = [
